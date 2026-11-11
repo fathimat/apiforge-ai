@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     if [ -f /run/secrets/java_truststore ]; then export MAVEN_OPTS="-Djavax.net.ssl.trustStore=/run/secrets/java_truststore"; fi; \
     if [ -f /run/secrets/maven_settings ]; then mvn -s /run/secrets/maven_settings -B -ntp verify; else mvn -B -ntp verify; fi
 
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 RUN addgroup -g 10001 -S app && adduser -S -D -H -u 10001 -G app -s /sbin/nologin app
 WORKDIR /app
 COPY --from=build --chown=10001:10001 /app/target/apiforge-ai-0.1.0.jar /app/app.jar
