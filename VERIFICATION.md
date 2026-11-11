@@ -13,9 +13,15 @@
 - Production runtime smoke test passed using the Dockerfile's runtime stage and the locally verified JAR: real `prod` profile, assigned port 10000, UID 10001, read-only filesystem, 512 MiB memory and 0.5 CPU, local PostgreSQL with hostname/certificate-verified TLS, schema migration, zero saved analyses, HTTP 410 history, and HTTP 400 AI requests. Test containers, their data volumes, and test networks were removed by the script.
 - The staged source is checked for credential patterns and known secret environment values before commit/push. Example environment files and test-only credentials are intentionally non-secret.
 
+## Hosted CI confirmation
+
+[GitHub Actions run 42991968337](https://github.com/fathimat/apiforge-ai/actions/runs/42991968337) passed all four jobs for application commit `398815d`: backend (including PostgreSQL), frontend/audit/build, browser privacy workflow, and complete multi-stage Docker build plus the production verified-TLS smoke test. No deployment jobs exist.
+
+The workflow follow-up pins Ubuntu 24.04 and updates deprecated Node 20-based Actions to current Node 24-based checkout/setup-java/setup-node versions, still pinned by commit SHA.
+
 ## Limits of verification
 
-The complete multi-stage Docker build was attempted repeatedly but this executor's VFS Docker storage exhausted its roughly 8 GB filesystem while unpacking the Maven build image. Clearing task build cache allowed a separate runtime image build and full production runtime smoke test to pass. The complete Docker build remains unverified locally; CI includes the full image build and the same verified-TLS smoke test on a hosted runner with more disk. Check that job before approving deployment.
+The complete multi-stage Docker build was attempted repeatedly but this executor's VFS Docker storage exhausted its roughly 8 GB filesystem while unpacking the Maven build image. Clearing task build cache allowed a separate runtime image build and full production runtime smoke test to pass. The complete Docker build remains unverified locally, but the same full image build and verified-TLS smoke test both passed on the hosted CI runner. Check the latest CI run before approving deployment.
 
 No Render service, Static Site, Neon project, cloud database connection, Google API call, paid resource, or deployment has been created by this preparation work. Actual Render headers, browser CORS from assigned service URLs, Neon trust/connectivity, and provider billing settings still need the runbook's post-approval verification. Gemini is blocked in the public analysis service regardless of environment flags.
 
