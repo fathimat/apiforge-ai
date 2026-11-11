@@ -9,6 +9,6 @@ spring:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
-# Gemini is additionally rejected by AnalysisService regardless of environment flags.
+# No live transport is installed; environment changes alone cannot enable Google calls.
 gemini:
   enabled: false

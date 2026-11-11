@@ -11,7 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(value = ApiController.class, properties = {
     "app.limits.peer-per-minute=2", "app.limits.global-per-minute=4"
 })
-@Import({WebSafetyConfig.class, AnalysisService.class, JsonValidator.class})
+@Import({WebSafetyConfig.class, AnalysisService.class, JsonValidator.class, GeminiClient.class,
+        StructuralSummaryFactory.class, AiAllowance.class, DisabledGeminiTransport.class})
 class RateLimitIntegrationTest {
     @Autowired MockMvc mvc;
 

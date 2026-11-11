@@ -1,17 +1,17 @@
 # Render + Neon deployment runbook
 
-**Preparation only. Nothing in this document or repository has been applied to Render or Neon. Creating a service or applying the Blueprint starts a deployment and requires separate approval.** Keep the source repository private; Render can deploy a private repository through its GitHub integration. Public visitors receive the built application, not access to the GitHub repository.
+**Runbook for the existing hosting setup. The owner has deployed the application; this local Gemini-ready work does not modify those deployments. Do not reapply this template or create/redeploy services without approval.** Keep the source repository private; Render can deploy a private repository through its GitHub integration. Public visitors receive the built application, not access to the GitHub repository.
 
 Architecture: browser → Render Static Site (React assets) → HTTPS Render Web Service (Spring Boot Docker) → TLS Neon PostgreSQL. Gemini is disabled. PostgreSQL currently holds only the empty analysis schema/Flyway metadata; no visitor exchanges or results are saved.
 
-## 1. Authorization and billing gate
+## 1. Authorization and permanent ₹0 gate
 
 After deployment is explicitly approved:
 
 1. Connect Render to GitHub and grant access to **only** `fathimat/apiforge-ai`.
 2. Use a free Render workspace/Static Site and a **Free** Web Service. Do not select a paid instance or add disks, paid databases, custom domains with charges, or credit-funded services.
 3. Select Neon's **Free** plan, keep autoscaling/compute within that plan, and review limits in its current dashboard.
-4. Review both providers' billing and usage settings before clicking any Create/Deploy button. Where possible, avoid adding a payment method and keep supplementary spending disabled. Limits and prices can change; do not accept an upgrade prompt automatically.
+4. Review both providers' billing and usage settings before clicking any Create/Deploy button. Do not add a payment method, activate billing, buy credits, or authorize supplementary spending. Limits and prices can change; do not accept an upgrade prompt automatically.
 5. Keep Render auto-deploys **Off** for both services. The template sets `autoDeployTrigger: "off"`; manual initial creation still deploys. GitHub Actions contains no deploy workflow or provider credentials.
 
 The account authorization steps require your browser; do not paste tokens or database passwords into chat or repository files.
@@ -95,7 +95,7 @@ Use real assigned HTTPS origins, then check:
 2. The workbench can validate and analyze the example with CORS succeeding only for the configured frontend. A preflight from another origin must not receive `Access-Control-Allow-Origin`.
 3. `GET /api/analyses` returns 410; guessed item paths such as `/api/analyses/1` return 404. A second browser sees no first visitor's data. Reloading clears results.
 4. Analyses return `id:null`; the `analyses` table count stays zero after demo use. No request or response text should appear in service logs.
-5. An envelope with `useAi:true` returns 400, regardless of `GEMINI_ENABLED`. There should be no Gemini key configured and no Google calls.
+5. For deployed commit `2f55262`, `useAi:true` returns 400. In the local Gemini-ready branch (not deployed), it returns a labeled local fallback when consent or availability is missing; even with consent and flags, the bundled transport cannot call Google. Keep the provider key unset.
 6. Bodies above 128 KiB return 413. Repeated processing requests eventually return 429 with `Retry-After`; wait for the next minute before further tests. Do not load-test a free service aggressively.
 7. API responses are `no-store`; Static Site security headers and CSP are present, and browser DevTools shows only HTTPS backend requests. No credentials appear in the built bundle, Git history, or logs.
 8. Recheck plan selections, budgets/usage, disabled auto-deploys, and GitHub repository privacy. Launch does not require making source public.
@@ -138,7 +138,7 @@ Checked against official documentation on 2026-11-11; recheck dashboards at depl
 - **Neon Free:** current documentation lists 100 CU-hours per project, 1 GB database storage per project (20 GB total account cap), and 5 GB public transfer per project, with compute scaling to zero after five idle minutes. Limits and region availability can change. Do not upgrade automatically when a cap is reached. See [Neon plans](https://neon.com/docs/introduction/plans).
 - **Cold starts:** Render and Neon can both be asleep. The UI waits up to 90 seconds and gives a retry message for unavailable or HTML wake-up responses; it never retries submissions automatically. A brief outage is possible and unsuitable for uptime guarantees. Do not add artificial keep-alive jobs to bypass provider limits.
 - **GitHub Actions:** private repositories use the account's included runner minutes and storage allowances. Check Actions billing and spending controls before enabling extra workflows; this project has timeouts/concurrency cancellation, no paid runner labels, no deployment job, and no artifacts uploaded.
-- **Gemini:** no usage is incurred by this demo because the service rejects AI requests. Enabling AI later requires separate approval and a new authenticated, budget-limited design; changing an environment variable is deliberately insufficient.
+- **Gemini:** live usage is prohibited in this preparation release: no live transport exists. Any future integration must stay on genuinely free, eligible service; billing, cards, subscriptions, credits, paid upgrades, and paid fallbacks are permanently prohibited. Quota exhaustion always means local analysis. See [the zero-budget plan](GEMINI_ZERO_BUDGET.md).
 
 Provider docs for the configuration: [Web Services](https://render.com/docs/web-services), [Blueprint fields](https://render.com/docs/blueprint-spec), [monorepo root paths](https://render.com/docs/monorepo-support), [Neon JDBC](https://neon.com/docs/guides/java).
 

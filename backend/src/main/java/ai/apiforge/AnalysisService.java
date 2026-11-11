@@ -3,24 +3,20 @@ package ai.apiforge;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 /** Stateless by design: anonymous visitors must never share stored results. */
 @Service
 public class AnalysisService {
     private final JsonValidator validator;
+    private final GeminiClient gemini;
 
-    public AnalysisService(JsonValidator validator) {
+    public AnalysisService(JsonValidator validator, GeminiClient gemini) {
         this.validator = validator;
+        this.gemini = gemini;
     }
 
     public Models.Result analyze(Models.Exchange input) {
-        // Deliberate server-side lock. An environment variable cannot enable AI in this demo.
-        if (input.useAi()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Gemini is disabled for this demo.");
-        }
         var request = validator.validate(input.requestBody());
         var response = validator.validate(input.responseBody());
         var tips = new ArrayList<String>();
@@ -42,7 +38,25 @@ public class AnalysisService {
                 new Models.Scenario("Invalid input", "Send malformed JSON or omit a required parameter", "Documented 4xx with a safe, useful error"),
                 new Models.Scenario("Authorization", "If protected, retry with missing, expired, and insufficient-scope credentials", "401 or 403 without sensitive data"),
                 new Models.Scenario("Boundary conditions", "Test empty, maximum-length, and out-of-range values", "Contract-defined results without server errors"));
+        String source = "local";
+        if (input.useAi()) {
+            var attempt = gemini.analyze(input);
+            if (attempt.outcome() == GeminiClient.Outcome.SUCCESS) {
+                tips.addAll(attempt.advice().suggestions());
+                scenarios = attempt.advice().scenarios();
+                source = "gemini";
+            } else {
+                source = "local-fallback";
+                tips.add(switch (attempt.outcome()) {
+                    case CONSENT_REQUIRED -> "No AI request was sent: explicit visitor consent is required. Local analysis is shown.";
+                    case DISABLED -> "Gemini is disabled. No data was sent to Google; local analysis is shown.";
+                    case LIMITED -> "The free AI allowance is unavailable. Local analysis is shown.";
+                    case INVALID_SUMMARY -> "A safe structural summary could not be prepared. Local analysis is shown.";
+                    default -> "AI advice is unavailable or could not be validated. Local analysis is shown.";
+                });
+            }
+        }
         // No repository access, body storage, cookies, session IDs, or analysis IDs.
-        return new Models.Result(null, Instant.now().toString(), "local", request, response, tips, scenarios);
+        return new Models.Result(null, Instant.now().toString(), source, request, response, tips, scenarios);
     }
 }

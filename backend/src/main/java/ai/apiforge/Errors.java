@@ -18,7 +18,7 @@ public class Errors extends ResponseEntityExceptionHandler {
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         // Do not echo rejected values, exception messages, URLs, SQL, or provider responses.
         String detail = switch (status.value()) {
-            case 400 -> "Invalid input. Check the method, HTTP(S) URL, status, JSON envelope, and 50,000-character body limits. Gemini is disabled.";
+            case 400 -> "Invalid input. Check the method, HTTP(S) URL, status, JSON envelope, and 50,000-character body limits.";
             case 404 -> "Resource not found.";
             case 405 -> "Method not allowed.";
             case 410 -> "History is disabled. This demo does not save analysis results.";

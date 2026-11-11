@@ -56,11 +56,14 @@ class ApiIntegrationTest {
         mvc.perform(post("/api/validate").contentType("application/json").content("sensitive-marker"))
                 .andExpect(status().isBadRequest()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("sensitive-marker"))));
     }
-    @Test void serverRejectsAiEvenWhenVisitorRequestsIt() throws Exception {
+    @Test void disabledAiFallsBackWithoutSavingResults() throws Exception {
         mvc.perform(post("/api/analyses").contentType("application/json").content("""
-            {"method":"GET","url":"https://example.com","requestBody":"","responseBody":"","status":200,"useAi":true}
+            {"method":"GET","url":"https://example.com","requestBody":"","responseBody":"","status":200,"useAi":true,"aiConsent":true}
             """))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("Gemini is disabled")));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.source").value("local-fallback"))
+                .andExpect(jsonPath("$.id").doesNotExist())
+                .andExpect(jsonPath("$.suggestions").value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.containsString("No data was sent"))));
+        assertEquals(0, repository.count());
     }
     @Test void corsOnlyAllowsConfiguredOrigins() throws Exception {
         mvc.perform(options("/api/analyses").header("Origin", "http://127.0.0.1:5173")
