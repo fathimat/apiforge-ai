@@ -1,0 +1,15 @@
+backend/target/
+frontend/node_modules/
+frontend/dist/
+.env
+*.log
+work/
+frontend/test-results/
+frontend/playwright-report/
+
+# Local secrets and machine-specific files
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
