@@ -1,16 +1,22 @@
-# Verification — 2026-11-11
+# Public-demo verification — 2026-11-11
 
-- Java 21.0.13 JDK, Maven 3.9.9: `mvn verify` passed; 11 JUnit/Mockito/Spring tests, no failures. Executable Spring Boot JAR built.
-- PostgreSQL 17.11: local Compose container became healthy; Flyway migration and Hibernate schema validation succeeded.
-- The 3 Spring integration tests were rerun with the PostgreSQL datasource; all passed.
-- React: 3 Vitest tests passed and Vite production build succeeded.
-- Playwright with system Chromium: 1 end-to-end workflow passed against the running PostgreSQL-backed application. It validates JSON, analyzes an exchange, reloads history, and checks mobile overflow.
-- Desktop (1440 px) and mobile (390 px) layouts inspected using Chromium.
-- Gemini was disabled. Opt-in and failure fallback behavior were tested with Mockito; a real Google API round trip was not performed.
+## Passed locally
 
-The environment initially had a Java runtime without a compiler and no Maven. A JDK and Maven were downloaded into `/workspace/work/tools`; dependency caches and environment-specific proxy/trust configuration remain under `/workspace/work`, outside the project. No system installation, deployment, Google resources, or changes to existing repositories were made.
+- Java 21.0.13 / Maven 3.9.9: `mvn verify`, **24 tests**, zero failures/errors; executable Spring Boot 3.5.16 JAR built.
+- PostgreSQL 17.11: **7 integration tests** rerun with the real local PostgreSQL datasource; all passed.
+- Frontend: **9 Vitest tests** passed; Vite production build passed with an example HTTPS backend origin.
+- Playwright + system Chromium: **1 end-to-end test** passed against the PostgreSQL-backed API, including two isolated browser visitors, no shared history, reload privacy, and mobile overflow.
+- `npm audit`: **zero known vulnerabilities** across production and development packages after updating Vitest. This is not a full Java/container vulnerability audit.
+- Render Blueprint: passed validation against the current official JSON schema.
+- GitHub Actions workflow: actionlint v1.7.12 passed. Third-party Actions references use resolved commit SHAs; jobs have read-only repository permissions, timeouts, and no deployment steps.
+- Bash Docker smoke-test script passed syntax validation.
+- Production runtime smoke test passed using the Dockerfile's runtime stage and the locally verified JAR: real `prod` profile, assigned port 10000, UID 10001, read-only filesystem, 512 MiB memory and 0.5 CPU, local PostgreSQL with hostname/certificate-verified TLS, schema migration, zero saved analyses, HTTP 410 history, and HTTP 400 AI requests. Test containers, their data volumes, and test networks were removed by the script.
+- The staged source is checked for credential patterns and known secret environment values before commit/push. Example environment files and test-only credentials are intentionally non-secret.
 
-Local frontend: http://127.0.0.1:5173
-Local backend health: http://127.0.0.1:8080/api/health
+## Limits of verification
 
-The local services were left running for review. Startup and shutdown instructions are in README.md.
+The complete multi-stage Docker build was attempted repeatedly but this executor's VFS Docker storage exhausted its roughly 8 GB filesystem while unpacking the Maven build image. Clearing task build cache allowed a separate runtime image build and full production runtime smoke test to pass. The complete Docker build remains unverified locally; CI includes the full image build and the same verified-TLS smoke test on a hosted runner with more disk. Check that job before approving deployment.
+
+No Render service, Static Site, Neon project, cloud database connection, Google API call, paid resource, or deployment has been created by this preparation work. Actual Render headers, browser CORS from assigned service URLs, Neon trust/connectivity, and provider billing settings still need the runbook's post-approval verification. Gemini is blocked in the public analysis service regardless of environment flags.
+
+Environment-specific caches, JDK/Maven tools, temporary TLS certificates, Docker build logs, and proxy trust settings remain outside the repository under `/workspace/work` or temporary directories. Production images and repository examples contain no such credentials or proxy configuration.

@@ -1,23 +1,23 @@
 # APIForge AI
 
-A local REST API analysis workbench built with Java 21, Spring Boot, React/Vite, PostgreSQL, and optional Google Gemini. Paste request and response bodies, validate JSON, get troubleshooting suggestions, generate test scenario ideas, and revisit the latest 20 analyses.
+A REST API analysis portfolio demo built with Java 21, Spring Boot, React/Vite, PostgreSQL, and a reserved Google Gemini adapter. Paste a redacted exchange, validate JSON, get local troubleshooting suggestions, and generate test scenario ideas. No pasted endpoint is executed.
 
-## Requirements
+**Public demo safety:** analyses are stateless. There is no history access, body persistence, login, cookie, or browser storage. Reloading clears results. Gemini is locked off server-side, including requests that explicitly ask for AI. The database schema remains for future authenticated functionality, but the public analysis flow never writes to it.
 
-Java 21 **JDK** (including `javac`), Node.js 22+ with npm, and Docker Compose for PostgreSQL. Maven Wrapper downloads Maven on first use. No cloud account is needed for local mode.
+Deployment preparation is included for Render Static Site + Docker Web Service + Neon PostgreSQL. These files do not create services. See [deployment instructions](docs/DEPLOYMENT.md), [security review](docs/SECURITY.md), and [verification](VERIFICATION.md).
 
-## Run with PostgreSQL
+## Run locally
 
-From the project root:
+Requirements: Java 21 **JDK**, Node.js 22+, npm. Maven Wrapper downloads Maven on first use.
+
+Without PostgreSQL (ephemeral H2, ideal for reviewing the stateless demo):
 
 ```sh
-cp .env.example .env
-docker compose up -d --wait
 cd backend
-./mvnw spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
-In a second terminal:
+In another terminal:
 
 ```sh
 cd frontend
@@ -25,41 +25,39 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. Vite proxies `/api` to the backend on port 8080. The app and database bind to localhost. Stop app processes with Ctrl+C; stop PostgreSQL with `docker compose down` from the project root. Its named volume retains history.
+Open http://127.0.0.1:5173 on the **same machine** running these processes. This address is not a public cloud preview URL. Vite proxies `/api` to localhost:8080. No frontend environment variable is needed for local development.
 
-For an ephemeral demo without Docker:
+To use local PostgreSQL instead, from the project root:
 
 ```sh
+cp .env.example .env
+# Set a unique local DATABASE_PASSWORD in .env before use.
+set -a
+. ./.env
+set +a
+docker compose up -d --wait
 cd backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+./mvnw spring-boot:run
 ```
 
-The demo uses H2 in PostgreSQL compatibility mode and loses history on exit. PostgreSQL is the default database. Flyway manages the schema; Hibernate validates it.
+The shell example is for bash/zsh; in PowerShell, set `$env:DATABASE_USER` and `$env:DATABASE_PASSWORD` instead. Spring does not load `.env` automatically. The database binds to localhost and uses an isolated `apiforge-ai` Compose project. Stop with `docker compose down`; it retains the named volume. Changing a password variable does not update an already initialized database. The public-demo behavior (no history or persistence) also applies locally.
 
 ## Configuration
 
-Compose reads `.env` for `POSTGRES_PASSWORD`. Spring does **not** automatically read `.env`; export backend variables in the shell or configure your IDE:
+| Setting | Local behavior | Production (`prod` profile) |
+| --- | --- | --- |
+| `DATABASE_URL` | Defaults to local PostgreSQL JDBC URL; `demo` profile uses H2 | Required PostgreSQL JDBC URL with verified TLS |
+| `DATABASE_USER`, `DATABASE_PASSWORD` | Required for PostgreSQL; `demo` uses isolated H2 credentials | Required, separate from URL, no production credential defaults |
+| `PORT` | Overrides `SERVER_PORT` / 8080 | Render-assigned port, fallback 10000 |
+| Bind address | 127.0.0.1 | 0.0.0.0 |
+| `CORS_ALLOWED_ORIGINS` | localhost and 127.0.0.1 origins on port 5173 | Required exact HTTPS frontend origin, no trailing slash or wildcard |
+| `VITE_API_BASE_URL` | Empty for Vite development proxy | Required HTTPS backend origin at frontend build time |
+| `GEMINI_ENABLED` | false | false; service also rejects `useAi:true` independently |
+| `GEMINI_API_KEY` | Leave unset | Leave unset until separate approval and an authenticated, budget-controlled AI design |
 
-| Variable | Default |
-| --- | --- |
-| `DATABASE_URL` | `jdbc:postgresql://localhost:5432/apiforge` |
-| `DATABASE_USER` | `apiforge` |
-| `DATABASE_PASSWORD` | `local-development-only` |
-| `SERVER_PORT` | `8080` |
-| `SERVER_ADDRESS` | `127.0.0.1` |
-| `GEMINI_ENABLED` | `false` |
-| `GEMINI_API_KEY` | empty |
-| `GEMINI_MODEL` | `gemini-2.5-flash` |
+Only the backend may ever receive database credentials or a Gemini key. Every `VITE_` variable becomes public browser code. Example environment files contain placeholders, not usable production credentials.
 
-If you change the database password, set both Compose's `POSTGRES_PASSWORD` and the backend's `DATABASE_PASSWORD`. Changing the variable does not update an already initialized PostgreSQL volume.
-
-## Optional Gemini integration
-
-Gemini stays disabled unless the backend is explicitly configured **and** the user checks “Use Gemini” for that analysis. Before enabling it, approve external data transfer and any Google API billing in your own environment. No Google resources or API calls are needed for tests.
-
-After approval, supply `GEMINI_ENABLED=true` and `GEMINI_API_KEY` securely in the backend environment, then restart it. Never put a key into frontend code or commit it. Enabling AI sends the pasted request body, response body, method, URL and status to Google's `generateContent` API. Remove credentials and private data first; automatic redaction is not provided. Provider failures fall back to explicitly labeled local suggestions. Gemini has connection and request timeouts; no automatic billable retries are made. Model availability depends on your Google account.
-
-## Tests and build
+## Tests and builds
 
 ```sh
 cd backend
@@ -67,16 +65,13 @@ cd backend
 cd ../frontend
 npm ci
 npm test
-npm run build
+VITE_API_BASE_URL=https://example-api.onrender.com npm run build
+npm audit --audit-level=high
 ```
 
-JUnit tests cover JSON parsing, invalid inputs, persisted history, and API validation. Mockito tests cover opt-in AI, provider failure fallback, and local troubleshooting. Spring integration tests use an isolated H2 database with Flyway migrations, not your PostgreSQL history. Frontend tests cover submission, errors, and JSON validation. No tests call Google or execute pasted URLs.
+The example HTTPS hostname is for testing a build only; replace it with the actual backend origin when deployment is approved. Production builds reject absent, HTTP, credential-bearing, or path-suffixed API origins. Run the build command with PowerShell environment syntax on Windows.
 
-`frontend/dist` is the production frontend build; `backend/target/apiforge-ai-0.1.0.jar` is the backend artifact. This MVP includes no deployment configuration. The Vite development proxy is not part of the static production bundle; serving a production build requires a same-origin reverse proxy for `/api`.
-
-## Browser workflow test
-
-With the backend running against either PostgreSQL or the demo database:
+With the backend running on 8080:
 
 ```sh
 cd frontend
@@ -84,16 +79,18 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Vite starts automatically if needed. For an installed system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`. This test validates payloads, creates an analysis, reloads saved history, and checks mobile overflow. It creates a local history record.
+Vite starts automatically. To use an installed Chromium: `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`. The browser test covers the workbench, separate visitors, disabled history, reload privacy, and mobile overflow. Automated tests never call Google.
+
+JUnit/Mockito tests cover byte and JSON limits, forged proxy headers, rate and concurrency caps, CORS, safe errors, stateless analysis, production origin/TLS validation, and blocked AI. Spring integration tests use H2; CI additionally reruns them against an isolated PostgreSQL service. GitHub Actions runs tests/builds only, with read-only repository permissions and no deploy job.
 
 ## REST API
 
-- `GET /api/health`: local service health.
-- `POST /api/validate`: `{ "json": "{\"id\":1}" }`, returning `valid`, `message`, `formatted`.
-- `POST /api/analyses`: analyze and persist an exchange.
-- `GET /api/analyses`: latest 20 saved results.
-
-Example analysis:
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /api/health` | Minimal process liveness, no credentials or database data |
+| `POST /api/validate` | `{ "json": "{\"id\":1}" }` → validity and bounded formatted preview |
+| `POST /api/analyses` | Stateless result and four scenario ideas, `id:null` |
+| `GET /api/analyses` | HTTP 410: shared history disabled |
 
 ```sh
 curl http://127.0.0.1:8080/api/analyses \
@@ -101,24 +98,20 @@ curl http://127.0.0.1:8080/api/analyses \
   -d '{"method":"POST","url":"https://api.example.com/orders","requestBody":"{\"quantity\":0}","responseBody":"{\"error\":\"Invalid quantity\"}","status":422,"useAi":false}'
 ```
 
-Allowed methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. Bodies are strings limited to 50,000 characters each; URLs are HTTP(S) and limited to 2,048 characters; status is 100–599. Empty bodies are allowed. Invalid JSON is an analysis finding, while invalid envelope fields produce HTTP 400. Trailing content after a JSON value is rejected.
+Envelopes require an HTTP(S) URL (max 2,048 characters), supported method, HTTP status 100–599, and body strings of at most 50,000 characters each. Empty bodies are allowed. The entire HTTP body must also fit in **128 KiB**, so escaping or multi-byte text can reach the byte cap sooner. Malformed inner JSON is an analysis finding; an invalid envelope produces 400. Requests asking for AI produce 400. The JSON nesting cap is 64 and oversized formatted previews are omitted.
 
-## Structure
+## Project layout
 
 ```text
-backend/
-  pom.xml, mvnw, mvnw.cmd, .mvn/wrapper/
-  src/main/java/ai/apiforge/    REST controller, service, JSON validator,
-                              Gemini adapter, JPA entity/repository, error handling
-  src/main/resources/         config profiles and Flyway SQL migration
-  src/test/java/ai/apiforge/   JUnit, Mockito, Spring integration tests
-frontend/
-  src/                        React workbench, styling, Vitest tests
-  package.json, package-lock.json, vite.config.js
-compose.yml                   Local PostgreSQL only
-.env.example                  Non-secret configuration examples
+backend/                 Spring Boot API, security filters, JPA schema, tests, Dockerfile
+frontend/                React workbench, API client, Vitest and Playwright tests
+.github/workflows/       CI tests and builds, no deployments
+.github/dependabot.yml   Dependency update checks
+render.yaml              Unapplied hosting template; auto-deploys disabled
+compose.yml              Local PostgreSQL only
+backend/.env.example     Production backend placeholders
+frontend/.env.example    Public API origin example
+.env.example             Local database placeholders
 ```
 
-## MVP boundaries
-
-This is a single-user localhost tool without login, access controls, automatic retention deletion, or rate limiting. Do not expose it to a public network. History stores generated results (including scenario URLs and possible Gemini excerpts), not the original body fields. Treat that history as potentially sensitive. Scenario cards describe tests for a human to review; they are not executable tests against the pasted API. AI guidance is untrusted advice, rendered as text. No supplied URL is fetched. There is no deployment or paid resource provisioning.
+This is a limited portfolio demo, not an authenticated production API testing platform. Use only sample or redacted data. App memory and cloud infrastructure still process requests; see the security review for residual risks and deployment gates.

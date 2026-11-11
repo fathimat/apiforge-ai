@@ -7,7 +7,8 @@ import org.springframework.stereotype.Component;
  public Models.Validation validate(String text) {
  if(text.isBlank()) return new Models.Validation(true,"Empty body (valid for bodyless exchanges)","");
  try { JsonNode n=mapper.reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readTree(text);
- return new Models.Validation(true,"Valid JSON",mapper.writerWithDefaultPrettyPrinter().writeValueAsString(n));
+ String formatted=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(n);
+ return new Models.Validation(true,"Valid JSON",formatted.length()<=100000?formatted:"");
  } catch(Exception e) { return new Models.Validation(false,"Invalid JSON: check syntax, quoting, commas, and trailing content.",""); }
  }
 }
