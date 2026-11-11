@@ -2,9 +2,13 @@
 
 A REST API analysis portfolio demo built with Java 21, Spring Boot, React/Vite, PostgreSQL, and a reserved Google Gemini adapter. Paste a redacted exchange, validate JSON, get local troubleshooting suggestions, and generate test scenario ideas. No pasted endpoint is executed.
 
-**Public demo safety:** analyses are stateless. There is no history access, body persistence, login, cookie, or browser storage. Reloading clears results. Gemini is locked off server-side, including requests that explicitly ask for AI. The database schema remains for future authenticated functionality, but the public analysis flow never writes to it.
+**Public demo safety:** analyses are stateless. There is no history access, body persistence, login, cookie, or browser storage. Reloading clears results. Gemini is locked off server-side, including requests that explicitly ask for AI. The local prepared path returns labeled local fallbacks rather than enabling a provider. The database schema remains for future authenticated functionality, but the public analysis flow never writes to it.
 
 Deployment preparation is included for Render Static Site + Docker Web Service + Neon PostgreSQL. These files do not create services. See [deployment instructions](docs/DEPLOYMENT.md), [security review](docs/SECURITY.md), and [verification](VERIFICATION.md).
+
+## Gemini-ready feature branch — not deployed
+
+This branch prepares a strict ₹0, mocked-only AI path. `GEMINI_ENABLED=false` remains the default and the only installed transport cannot perform network I/O. No environment variable can activate live Gemini. The consent UI is disabled; local rules work for all visitors. See [the zero-budget design, safeguards, tests, and approval gates](docs/GEMINI_ZERO_BUDGET.md).
 
 ## Run locally
 
@@ -52,7 +56,7 @@ The shell example is for bash/zsh; in PowerShell, set `$env:DATABASE_USER` and `
 | Bind address | 127.0.0.1 | 0.0.0.0 |
 | `CORS_ALLOWED_ORIGINS` | localhost and 127.0.0.1 origins on port 5173 | Required exact HTTPS frontend origin, no trailing slash or wildcard |
 | `VITE_API_BASE_URL` | Empty for Vite development proxy | Required HTTPS backend origin at frontend build time |
-| `GEMINI_ENABLED` | false | false; service also rejects `useAi:true` independently |
+| `GEMINI_ENABLED` | false | false; bundled transport also blocks all live calls independently |
 | `GEMINI_API_KEY` | Leave unset | Leave unset until separate approval and an authenticated, budget-controlled AI design |
 
 Only the backend may ever receive database credentials or a Gemini key. Every `VITE_` variable becomes public browser code. Example environment files contain placeholders, not usable production credentials.
@@ -98,7 +102,7 @@ curl http://127.0.0.1:8080/api/analyses \
   -d '{"method":"POST","url":"https://api.example.com/orders","requestBody":"{\"quantity\":0}","responseBody":"{\"error\":\"Invalid quantity\"}","status":422,"useAi":false}'
 ```
 
-Envelopes require an HTTP(S) URL (max 2,048 characters), supported method, HTTP status 100–599, and body strings of at most 50,000 characters each. Empty bodies are allowed. The entire HTTP body must also fit in **128 KiB**, so escaping or multi-byte text can reach the byte cap sooner. Malformed inner JSON is an analysis finding; an invalid envelope produces 400. Requests asking for AI produce 400. The JSON nesting cap is 64 and oversized formatted previews are omitted.
+Envelopes require an HTTP(S) URL (max 2,048 characters), supported method, HTTP status 100–599, and body strings of at most 50,000 characters each. Empty bodies are allowed. The entire HTTP body must also fit in **128 KiB**, so escaping or multi-byte text can reach the byte cap sooner. Malformed inner JSON is an analysis finding; an invalid envelope produces 400. Requests asking for AI require `aiConsent:true`; when disabled or unavailable, they return local results labeled `local-fallback` without a Google call. This branch has no live transport. The deployed `2f55262` version remains unchanged and still rejects AI requests with 400. The JSON nesting cap is 64 and oversized formatted previews are omitted.
 
 ## Project layout
 

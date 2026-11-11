@@ -1,3 +1,21 @@
+# Gemini-ready feature-branch verification — 2026-11-11
+
+**Feature branch only:** `feature/gemini-ready-zero-budget`, based on `2f55262`. The owner approved committing and pushing this branch after re-verification. Merge, deployment, and live activation are not authorized. Existing Render Free and Neon Free deployments are unchanged.
+
+- Backend: **46 tests passed**, zero failures/errors, with offline Maven (`-o`) and cached dependencies; executable JAR built.
+- AI responses, HTTP failures (including 429/auth errors), timeouts, connection failures, interruptions, invalid/blocked/truncated/oversized output, prompt-injection-shaped inputs, consent, unsupported models, disabled transport, and allowance/cooldown behavior were tested with Mockito only.
+- Full API mock-flow test passed with H2 and confirmed zero saved analyses after both successful mocked AI and invalid-output fallback. Existing request limits, CORS, safe error handling, and disabled history tests passed.
+- Frontend: **11 tests passed**, including disabled-by-default consent, per-exchange reset, local-only requests, mocked future opt-in, and escaped rendering. Production build passed; its HTTPS API origin was configuration text only, not contacted.
+- Browser: **1 Playwright test passed** against the local H2-backed demo, covering disabled consent, local analysis, two-visitor isolation, disabled history, reload privacy, and mobile overflow. Browser contexts block non-loopback HTTP requests.
+- Updated Docker smoke script passed bash syntax validation. It now expects a labeled local fallback for an AI request; the complete Docker build/smoke and real PostgreSQL rerun were not repeated for this branch. Packaging and H2 integration tests cover the new behavior. No production database was contacted.
+- No dependencies, hosting configuration, migration, CI workflow, or provider account was added or upgraded. Tests made no live Google calls; no runnable live HTTP transport is included. `GEMINI_ENABLED=false` and the hard-disabled transport remain in place.
+
+The pre-push review rechecked all 27 changed files for secret material, known environment credentials, dependencies, executable network paths, and billing requirements. The pre-push rerun passed all 46 backend tests, 11 frontend tests, one browser workflow, backend packaging, and the production frontend build. Dependency manifests/lockfile, hosting configuration, migrations, and CI configuration remain unchanged. CI push triggers target `main`, so a feature-only push does not start that workflow; no pull request or manual workflow run is part of this approval.
+
+The local test backend uses the `demo` profile (H2), not Neon. Environment-specific logs/tools remain in `/workspace/work`. The earlier verification below describes the existing pushed deployment-preparation version, not this unmerged feature branch.
+
+---
+
 # Public-demo verification — 2026-11-11
 
 ## Passed locally

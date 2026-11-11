@@ -9,7 +9,7 @@
 | Anonymous CPU/concurrency abuse | 120 requests/minute process-wide, 30/minute per socket peer, four in-flight requests; 429/503 with Retry-After | Fixed-window boundary bursts, distributed denial of service, and deliberate shared-quota exhaustion remain possible |
 | Spoofed client IPs could reset a naive limiter | Forwarded and X-Forwarded-For are never used; forwarding interpretation is disabled | Render proxies can share a socket-peer identity, so different visitors can share the 30/minute quota |
 | Unbounded JSON nesting/pretty printing | Jackson depth 64, strings 50,000, numeric literals 1,000, document 128 KiB; formatted output capped at 100,000 characters | Validation suggestions do not replace an API contract or schema |
-| Future public AI cost/data transfer | Public service rejects useAi:true before processing; UI has no AI opt-in; deployment config sets GEMINI_ENABLED=false and no API key | AI requires a separate code change, authorization, quotas, budget controls, privacy review, and user approval |
+| Future public AI cost/data transfer | Bundled transport cannot perform I/O; AI requests return local fallbacks; future consent is disabled; configuration keeps GEMINI_ENABLED=false and no API key | A real adapter and compliant audience controls require separate approval; paid services/billing/credits are prohibited permanently |
 | Cross-origin use of backend | Exact configured frontend origins, JSON-only POST endpoints, limited methods/headers, no credentialed CORS | CORS is a browser control, not authentication. Scripts outside browsers can still call the API. |
 | Detailed exceptions or caches can disclose data | Generic problem responses; no request/SQL logging, exception messages, or stack traces in application error responses/logs; no-store API responses | Hosting providers can retain access metadata. Do not add request-body logging/APM capture. |
 | Unsafe rendering of pasted content | React renders text, no HTML injection; static CSP/anti-framing/referrer protections | No automatic secret/PII redaction; visitors must paste redacted sample data |
@@ -40,3 +40,7 @@ Textareas, browser memory, the host's request buffers, and the visitor's browser
 Use a fresh Neon database and dedicated role; provide secrets through Render's backend environment settings. Keep production profiles and Gemini-disabled settings intact. Verify exact CORS, CSP, HTTPS, 410 history responses, absent database writes, secret-free logs, quotas, and billing settings using the deployment checklist. Do not upload real credentials as test payloads.
 
 This code is suitable for evaluating a constrained public portfolio demo after those checks. It does **not** provide login, user-owned history, contractual confidentiality, continuous availability, distributed abuse protection, or a guarantee of zero vulnerabilities. Do not enable storage or AI for anonymous visitors without another design and security review.
+
+## Gemini-ready local work
+
+See [GEMINI_ZERO_BUDGET.md](GEMINI_ZERO_BUDGET.md) for the enum/count-only structural boundary, mocked transport, strict output validation, consent gates, process-local AI allowances, and permanent ₹0 constraints. This work is approved for the feature branch only; it is not merged or deployed, and the existing public deployment is unchanged.

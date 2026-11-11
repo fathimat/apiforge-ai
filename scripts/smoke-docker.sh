@@ -51,8 +51,8 @@ curl -fsS "$review_origin/api/validate" -H 'Content-Type: application/json' \
   -d '{"json":"{}"}' | grep -q '"valid":true'
 curl -fsS "$review_origin/api/analyses" -H 'Content-Type: application/json' \
   -d '{"method":"GET","url":"https://example.com","requestBody":"","responseBody":"{}","status":200,"useAi":false}' | grep -q '"id":null'
-[ "$(curl -s -o /dev/null -w '%{http_code}' "$review_origin/api/analyses" -H 'Content-Type: application/json' \
-  -d '{"method":"GET","url":"https://example.com","requestBody":"","responseBody":"{}","status":200,"useAi":true}')" = 400 ]
+curl -fsS "$review_origin/api/analyses" -H 'Content-Type: application/json' \
+  -d '{"method":"GET","url":"https://example.com","requestBody":"","responseBody":"{}","status":200,"useAi":true,"aiConsent":true}' | grep -q '"source":"local-fallback"'
 [ "$(docker exec "$review_db" psql -U test_user -d apiforge_test -Atc 'select count(*) from analyses')" = 0 ]
 [ "$(docker exec "$review_db" psql -U test_user -d apiforge_test -Atc "select count(*) from pg_stat_ssl where ssl")" -gt 0 ]
 echo 'PASS: production profile, Render-style port, non-root read-only 512 MiB runtime, verified PostgreSQL TLS, stateless API, disabled history and Gemini.'
