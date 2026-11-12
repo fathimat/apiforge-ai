@@ -96,16 +96,31 @@ provider transport remain disabled; the live analysis path uses local backend ru
 
 ## Application screenshots
 
-No screenshots are included yet. These are **explicit placeholders**, not generated or verified images.
+The following screenshots were supplied for this project and are included unchanged.
+They show the API workbench, local rules-based analysis, and JSON validation feedback;
+live Gemini API calls remain disabled.
 
-| Planned screenshot | Status |
-| --- | --- |
-| Workbench with the built-in example exchange | **Placeholder — add an actual application capture** |
-| Rules-based troubleshooting results and test scenarios | **Placeholder — add an actual application capture** |
-| JSON validation feedback | **Placeholder — add an actual application capture** |
+### API workbench
 
-Use sample data when capturing images. Exclude tokens, personal data, browser account details,
-and provider dashboards. Captions should identify whether a capture shows the live demo or a local branch.
+![APIForge AI workbench with method, URL, status, request and response JSON editors, and disabled Gemini consent](docs/screenshots/01-api-workbench.png)
+
+The workbench displays the built-in POST example with a `422` response, separate JSON editors,
+and controls for validation and analysis. Gemini consent is visible but disabled.
+
+### Troubleshooting results and test scenarios
+
+![Local troubleshooting suggestions and four API test-scenario cards in APIForge AI](docs/screenshots/02-troubleshooting-results.png)
+
+Local backend rules produce troubleshooting suggestions and four scenario ideas:
+expected response, invalid input, authorization, and boundary conditions. These are suggestions,
+not executed tests or live generative AI output.
+
+### JSON validation feedback
+
+![APIForge AI flags invalid request JSON while reporting a valid JSON response](docs/screenshots/03-json-validation.png)
+
+The validation feedback flags malformed request JSON while reporting the response as valid JSON.
+Analysis cards from an earlier run are also visible below the feedback.
 
 ## REST API
 
@@ -386,7 +401,7 @@ These are planned ideas, not current functionality:
 - More rules-based checks and contract-aware scenario templates.
 - Optional OpenAPI validation using explicitly supplied schemas.
 - Downloadable scenario checklists without server-side history.
-- Accessible interaction refinements and real, redacted application screenshots.
+- Accessible interaction refinements.
 - Further provider-independent tests for the prepared AI contract.
 - Optional Gemini only if free-tier eligibility, audience restrictions, privacy safeguards,
   and explicit activation approval are satisfied. Otherwise, keep it disabled and use local rules.
